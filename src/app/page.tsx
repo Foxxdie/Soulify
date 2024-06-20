@@ -11,9 +11,16 @@ import ReactFlow, {
   addEdge,
   BackgroundVariant,
 } from 'reactflow';
- 
+import { ArrowDownIcon } from "@heroicons/react/16/solid";
 import 'reactflow/dist/style.css';
-import FlowChart from "./components/Flow";
+import FlowChart from "./components/Flow2";
+import MentalProcessModal from "./components/modals/MentalProcessModal";
+import Sidebar from "./components/Sidebar";
+import { SoulProvider } from "./providers/SoulProvider";
+
+
+
+
 export default function Home() {
 
   const initialNodes = [
@@ -30,29 +37,17 @@ export default function Home() {
     [setEdges],
   );
 
+
   return (
     <main style={{ width: '100vw', height: '100vh' }}>
-      {/* <div className="h-[50rem] w-full dark:bg-black bg-white  dark:bg-dot-white/[0.2] bg-dot-black/[0.2] relative flex items-center justify-center">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-        />
-      </div> */}
-      <FlowChart />
-      {/* <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-      >
-        <Controls />
-        <MiniMap />
-        <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-      </ReactFlow> */}
+      <SoulProvider>
+
+        <div className="flex w-full h-full">
+          <FlowChart />
+          <Sidebar />
+        </div>
+
+      </SoulProvider>
     </main>
   );
 }
