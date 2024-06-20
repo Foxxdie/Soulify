@@ -10,7 +10,6 @@ interface SoulEngineContextType {
   doc: ReturnType<typeof syncedStore<{ files: Record<string, string> }>>,
   updateFile: (filePath: string, content: string) => void;
   getFileContent: (filePath: string) => string | undefined;
-  initialize: () => void;
 }
 
 // Create the context
@@ -60,31 +59,6 @@ export const SoulProvider: React.FC<{ local?: boolean, children: ReactNode }> = 
       data: '',
     }));
   };
-
-  /**
-   * Initialize a new soul / YJS document store. This will read all of the 
-   * files from the soul directory and add them to the YJS document store.
-   * @returns 
-   */
-  const initialize = async () => {
-    // Fetch The local files
-    const response = await fetch('/api');
-
-    // console.log('RESPONSE:', response)
-    // parse the file contents and load them into the YSJ document store
-    if (response.ok) {
-      const filesData = await response.json();
-      console.log('FILES:', filesData)
-      getYjsDoc(doc).transact(() => {
-        for (const file of filesData) {
-          doc.files[file.relativePath] = file.content;
-        }
-      });
-    } else {
-      console.error('Error fetching files from API route:', response.status);
-    }
-  };
-
 
   useEffect(() => {
     const init = async () => {
@@ -152,7 +126,7 @@ export const SoulProvider: React.FC<{ local?: boolean, children: ReactNode }> = 
   }, [local]);
 
   // Provide the context values
-  const contextValue = { doc, updateFile, getFileContent, initialize };
+  const contextValue = { doc, updateFile, getFileContent };
 
   return (
     <SoulEngineContext.Provider value={contextValue}>

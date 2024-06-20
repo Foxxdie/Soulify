@@ -33,7 +33,7 @@ const Blueprint: React.FC = (props) => {
   const [profanity, setProfanity] = useState<string>('mild');
   const [content, setContent] = useState<string>('');
   const [filePath, setFilePath] = useState<string>('');
-  const { doc, updateFile, getFileContent, initialize } = useSoulEngine();
+  const { doc, updateFile, getFileContent } = useSoulEngine();
 
   // log doc with useEffect
   useEffect(() => {
@@ -63,7 +63,7 @@ const Blueprint: React.FC = (props) => {
     // const file = 'soul/Samantha.md';
     // const t = getFileContent(file);
     // console.log(t)
-    initialize();
+    // initialize();
   }
   const handleGet = () => {
     const file = 'soul/default.env.ts';
