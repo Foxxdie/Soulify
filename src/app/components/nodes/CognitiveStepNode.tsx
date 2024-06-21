@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
 import { HandRaisedIcon, Cog6ToothIcon } from '@heroicons/react/16/solid';
-import CognitiveStepDropdown, {CognitiveStepOption} from './utility/CognitiveStepDropdown';
+import CognitiveStepDropdown, {CognitiveStepOption} from './controls/CognitiveStepDropdown';
 
 // TODO: Check engine for types
 export type SoulOptions = {

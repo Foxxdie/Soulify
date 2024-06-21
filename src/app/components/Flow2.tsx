@@ -17,13 +17,11 @@ import ReactFlow, {
   useEdgesState,
   useNodesState,
 } from "reactflow";
-import MentalProcess from "./MentalProcessNode";
-import CognitiveStep, { CognitiveSteps } from "./CognitiveStepNode";
-import Action, { SoulActions } from "./ActionNode";
-import Return from "./ReturnNode";
-import WorkingMemory from "./WorkingMemoryNode";
-import ResizeableNodeSelected from "./utility/ResizeableNodeSelected";
-import CustomNode from "./CustomNode";
+import MentalProcess from "./nodes/MentalProcessNode";
+import CognitiveStep, { CognitiveSteps } from "./nodes/CognitiveStepNode";
+import Action, { SoulActions } from "./nodes/ActionNode";
+import Return from "./nodes/ReturnNode";
+import WorkingMemory from "./nodes/WorkingMemoryNode";
 import SoulCodeCopyButton from "./utility/generateSoulCode";
 
 import { initialEdges, initialNodes } from "./data";
@@ -40,8 +38,6 @@ export default function FlowChart() {
       action: Action,
       return: Return,
       workingMemory: WorkingMemory,
-      resizeableNodeSelected: ResizeableNodeSelected,
-      customNode: CustomNode,
     }),
     []
   );
@@ -49,8 +45,6 @@ export default function FlowChart() {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const onChange = (event:any, changedNode:any) => {
-    console.log("Event: ", event);
-    console.log("ChangesNode: ", changedNode);
     setNodes((nds) =>
       nds.map((node) => {
         if (node.id === changedNode.id) {
@@ -106,7 +100,7 @@ export default function FlowChart() {
           label: "Working Memory",
           draggable: false,
         },
-        position: { x: 0, y: 0 },
+        position: { x: 70, y: 150 },
       },
       {
         id: "cognitiveStep-1",
@@ -117,7 +111,7 @@ export default function FlowChart() {
           instructions: "Talk to the user trying to gain trust and learn about their inner world.",
           onChange,
         },
-        position: { x: 110, y: 50 },
+        position: { x: 300, y: 180 },
       },
       {
         id: "speaks-returns",
@@ -126,7 +120,7 @@ export default function FlowChart() {
           label: "New Working Memory",
           draggable: false,
         },
-        position: { x: 644, y: 0 },
+        position: { x: 644, y: 150 },
       },
       {
         id: "speak",
@@ -136,7 +130,7 @@ export default function FlowChart() {
           action: SoulActions.SPEAK,
           onChange,
         },
-        position: { x: 400, y: 150 },
+        position: { x: 650, y: 350 },
         style: { width: 200, height: 75 },
       },
     ]);
@@ -166,10 +160,13 @@ export default function FlowChart() {
   }
 
 
-  // const onEdgesChange: OnEdgesChange = useCallback(
-  //   (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-  //   [setEdges]
-  // );
+  const onNodesDelete = (nodesToDelete: Node[]) => {
+    return [];
+    console.log("Nodes to delete: ", nodesToDelete)
+    const exclude = ['return', 'workingMemory'];
+    setNodes((nds) => nds.filter((node) => !nodesToDelete.includes(node) && !exclude.includes(node.type as string)));
+  }
+
   const onConnect: OnConnect = useCallback(
     (connection) => setEdges((eds) => {
       console.log("Connection: ", connection)
@@ -245,13 +242,13 @@ export default function FlowChart() {
     <>
       <div className="p-4 flex gap-x-2 absolute top-2 left-2 z-50">
         <button
-          className="bg-red-700 text-white px-4 py-2 rounded"
+          className="px-4 py-2 border-2 border-indigo-500 rounded-lg shadow-lg bg-gray-800 text-white"
           onClick={addCognitiveStepNode}
         >
           Add Cognitive Step
         </button>
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="px-4 py-2 border-2 border-blue-300 rounded bg-blue-700 text-blue-200"
           onClick={addActionNode}
         >
           Add Action
@@ -268,6 +265,7 @@ export default function FlowChart() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}
+        // onNodesDelete={onNodesDelete}
         // isValidConnection={isValidConnection}
       >
         <Controls />

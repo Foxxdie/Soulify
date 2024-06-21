@@ -3,11 +3,14 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+/**
+ * Get all files in the soul directory so that we can initialize a new soul.
+ * This has to be a server action so that we have access to the file system.
+ * @returns 
+ */
 export async function GET() {
   const soulDirPath = './daedalus/soul'; // Adjust path if needed
-  console.log('YEAH GOT IT!')
   try {
-    // ... Your readFilesRecursive function (from previous examples) ...
     const readFilesRecursive = (dirPath: string): { relativePath: string; content: string }[] => {
       const files: { relativePath: string; content: string }[] = [];
 
@@ -29,7 +32,8 @@ export async function GET() {
 
     const filesToRead = readFilesRecursive(soulDirPath);
 
-    const packageJsonPath = path.join(soulDirPath, '../package.json'); // Construct path
+    // additionally grab package.json since it's outside the soul directory
+    const packageJsonPath = path.join(soulDirPath, '../package.json'); 
     if (fs.existsSync(packageJsonPath)) {
       const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf-8');
       filesToRead.push({ relativePath: 'package.json', content: packageJsonContent });

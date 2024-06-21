@@ -5,25 +5,32 @@ import {
   MarkerType,
 } from "reactflow";
 import { MentalProcessNode } from '../data';
-import { CognitiveStepHandles } from '../CognitiveStepNode';
+import { CognitiveStepHandles } from '../nodes/CognitiveStepNode';
+import { get } from 'http';
+import { useSoulEngine } from '@/app/providers/SoulProvider';
+import { DocumentDuplicateIcon, ArrowUpOnSquareIcon } from '@heroicons/react/16/solid';
+
+type Variables = [string, string];
 
 function createMentalProcessNode(id: string, nodes: Node[], edges: Edge[]): MentalProcessNode {
-  const rootNode = nodes.find(node => node.id === id && node.type === 'mentalProcess');
-  if (!rootNode) {
-    throw new Error(`Could not find root node with id '${id}'`);
-  }
+  // const rootNode = nodes.find(node => node.id === id && node.type === 'mentalProcess');
+  // if (!rootNode) {
+  //   throw new Error(`Could not find root node with id '${id}'`);
+  // }
 
   // Extract nodes and edges related to the mental process
-  const relevantNodes = nodes.filter(node => node.parentId === id);
-  const relevantEdges = edges.filter(edge => {
-    // Check if the edge's source is any of the relevant node IDs
-    return relevantNodes.some(node => edge.source === node.id); 
-  });
+  // const relevantNodes = nodes.filter(node => node.parentId === id);
+  // const relevantEdges = edges.filter(edge => {
+  //   // Check if the edge's source is any of the relevant node IDs
+  //   return relevantNodes.some(node => edge.source === node.id); 
+  // });
+  const relevantNodes = nodes;
+  const relevantEdges = edges;
 
   const result = {
     id,
-    rootNode,
-    nodes: relevantNodes,
+    rootNode: {},
+    nodes: relevantNodes, 
     edges: relevantEdges,
   };
 
@@ -35,6 +42,7 @@ function createMentalProcessNode(id: string, nodes: Node[], edges: Edge[]): Ment
 
 function SoulCodeCopyButton({ nodes, edges }: { nodes: Node[], edges: Edge[] }) {
   const [isCopied, setIsCopied] = useState(false);
+  const { doc, updateFile, getFileContent } = useSoulEngine();
 
   const handleCopyClick = () => {
     const mentalProcess = createMentalProcessNode('speaks', nodes, edges);
@@ -48,109 +56,148 @@ function SoulCodeCopyButton({ nodes, edges }: { nodes: Node[], edges: Edge[] }) 
       .catch(err => console.error("Failed to copy: ", err));
   };
 
+  const handleUploadClick = () => {
+    const mentalProcess = createMentalProcessNode('speaks', nodes, edges);
+    const generatedCode = generateMentalProcessCode(mentalProcess);
+    const file = 'soul/initialProcess.ts';
+    console.log("Updating File: ", file);
+    updateFile(file, generatedCode); 
+  }
+
   return (
-    <button onClick={handleCopyClick} disabled={isCopied}>
-      {isCopied ? "Copied!" : "Copy SOUL Code"}
-    </button>
+    <>
+      <button 
+        onClick={handleCopyClick} 
+        disabled={isCopied}
+        className="border-2 border-white flex items-center px-2 py-1 rounded shadow-lg bg-gray-600 text-white"
+      >
+        <DocumentDuplicateIcon className="h-5 w-5 mr-2" />
+        {isCopied ? "Copied!" : "Copy Soul"}
+      </button>
+      <button 
+        onClick={handleUploadClick}
+        className="border-2 border-white flex items-center px-2 py-1 rounded shadow-lg bg-gray-600 text-white"
+      >
+        <ArrowUpOnSquareIcon className="h-5 w-5 mr-2" />
+        Upload Soul
+      </button>
+    </>
   );
 }
+
+const createImportStatements = (imports: Set<string>): string => {
+  let code = 'import { MentalProcess, useActions } from "@opensouls/engine";\n';
+  imports.forEach(importName => {
+    code += `import ${importName} from "./cognitiveSteps/${importName}.js";\n`;
+  });
+  code += '\n';
+  return code;
+}
+
+
+const generateVariableNames = (existingNames: Variables[], cognitiveStep:any): [string, string] => {
+  let count = 1;
+  const step = cognitiveStep.data.cognitiveStep;
+
+  let memoryName = withize(step);
+  let resultName = `${step}Result`;
+
+  // if [memoryName, resultName] already exists, append count, and check again. repeat until unique
+  while (existingNames.some(([mem, res]) => mem === memoryName || res === resultName)) {
+    memoryName = `${withize(step)}${count}`;
+    resultName = `${step}Result${count}`;
+    count++;
+  }
+
+  return [memoryName, resultName];
+}
+
 
 const capitalizeFirstLetter = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
 const withize = (str: string): string => `with${capitalizeFirstLetter(str)}`;
 
 function generateMentalProcessCode(mentalProcess: MentalProcessNode): string {
-  const { rootNode, nodes, edges } = mentalProcess;
-  const mentalProcessName = rootNode.id;
+  const { nodes, edges, id } = mentalProcess;
+  const mentalProcessName = id;
 
   // Extract relevant information from nodes
   const cognitiveSteps = nodes.filter(node => node.type === 'cognitiveStep');
   const actions = nodes.filter(node => node.type === 'action');
 
+  // get all cognitive step name from step.data.cognitiveStep. MUST BE UNIQUE
+  const cognitiveStepNames = cognitiveSteps.map(step => step.data.cognitiveStep);
+  const imports = new Set(cognitiveStepNames);
+  const variables: Variables[] = [];
+  
+  let code = createImportStatements(imports);
+
   // Generate the function signature
-  let code = `const ${mentalProcessName}: MentalProcess = async ({ workingMemory }) => {`;
+  code += `const ${mentalProcessName}: MentalProcess = async ({ workingMemory }) => {`;
 
   // Generate code for importing actions
   code += `\n  const { ${actions.map(action => action.data.action).join(', ')} } = useActions(); \n`;
 
-  // Create a map to store the working memory variable for each cognitive step
-  const workingMemoryMap = new Map<string, string>();
-
-  // Initialize the starting working memory
-  workingMemoryMap.set(rootNode.id, 'workingMemory');
-
-  // Generate code for cognitive steps
-  cognitiveSteps.forEach(step => {
-    const stepName = step.data.cognitiveStep;
-    const instructions = step.data.instructions;
-    const outgoingEdges = edges.filter(edge => edge.source === step.id);
-
-    // Extract target node ids for outgoing edges
-    const targetNodeIds = outgoingEdges.map(edge => edge.target);
-
-    // Identify the edge that sends the output to the mental process
-    const outputEdge = outgoingEdges.find(edge => edge.sourceHandle === CognitiveStepHandles.RESULT);
-
-    // Determine the working memory variable for this step
-    let currentWorkingMemory = workingMemoryMap.get(step.id) || 'workingMemory';
-
-    // Generate code for the cognitive step function call
-    // **Key Change:** Use 'withX' and 'result' for return values
-    code += `\n  const [${withize(stepName)}, ${stepName}Result] = await ${stepName}(`;
-    code += `\n    ${currentWorkingMemory},`;
-    if (instructions) {
-      code += `\n    "${instructions}",`;
-    } else {
-      code += `\n    null,`;
+  function generateStepCode(nodeId: string, currentWorkingMemory: string): string {
+    let stepCode = '';
+    const node = nodes.find(node => node.id === nodeId);
+  
+    if (!node) {
+      console.error(`Node with ID ${nodeId} not found!`);
+      return stepCode;
     }
-    // Determine if a stream is needed
-    // if (outputEdge) {
-    //   code += `\n    { stream: true, model: "gpt-4-0125-preview" }`;
-    // } else {
-    //   code += `\n    {}`;
-    // }
-    code += `\n  );\n`;
-
-    // Generate code for calling actions based on output edges
-    outgoingEdges.forEach(edge => {
-      const targetNode = nodes.find(node => node.id === edge.target);
-      if (targetNode && targetNode.type === 'action') {
-        const actionName = targetNode.data.action;
-        // Use the appropriate variable based on source handle
-        code += `\n  ${actionName}(${edge.sourceHandle === CognitiveStepHandles.RESULT ? stepName + 'Result' : 'stream'});\n`; 
+  
+    if (node.type === 'cognitiveStep') {
+      const stepName = node.data.cognitiveStep;
+      const instructions = node.data.instructions;
+      const outgoingEdges = edges.filter(edge => edge.source === nodeId);
+  
+      const [memoryName, resultName] = generateVariableNames(variables, node);
+      variables.push([memoryName, resultName]);
+  
+      stepCode += `\n  const [${memoryName}, ${resultName}] = await ${stepName}(`;
+      stepCode += `\n    ${currentWorkingMemory},`;
+      stepCode += instructions ? `\n    "${instructions}",` : `\n    null,`;
+      stepCode += `\n  );\n`;
+  
+      // Generate action code immediately after cognitive step based on RESULT edge
+      const resultEdge = outgoingEdges.find(edge => edge.sourceHandle === CognitiveStepHandles.RESULT);
+      if (resultEdge) {
+        const actionNode = nodes.find(node => node.id === resultEdge.target);
+        if (actionNode && actionNode.type === 'action') {
+          stepCode += `\n  ${actionNode.data.action}(${resultName});\n`;
+        }
       }
-    });
+  
+      // Recursively generate code for other outgoing edges 
+      outgoingEdges.forEach(edge => {
+        if (edge.sourceHandle !== CognitiveStepHandles.RESULT) { // Skip RESULT edge (already handled)
+          const targetNode = nodes.find(node => node.id === edge.target);
+          if (targetNode) {
+            stepCode += generateStepCode(targetNode.id, memoryName); 
+          }
+        }
+      });
+  
+    } else if (node.type === 'action') {
+      // Action code is now generated directly after the cognitive step
+    } else if (node.type === 'return') {
+      stepCode += `\n  return ${currentWorkingMemory};\n`;
+    }
+  
+    return stepCode;
+  }
 
-    // Update the working memory for subsequent steps
-    outgoingEdges.forEach(edge => {
-      const targetNode = nodes.find(node => node.id === edge.target);
-      if (targetNode) {
-        workingMemoryMap.set(targetNode.id, withize(stepName)); // Use the updated working memory
-      }
-    });
+  // Find starting nodes (connected to workingMemory)
+  const startingNodeIds = edges
+    .filter(edge => edge.source.includes('workingMemory'))
+    .map(edge => edge.target);
+
+  console.log('Starting Node IDs:', startingNodeIds)
+
+  startingNodeIds.forEach(startingNodeId => {
+    code += generateStepCode(startingNodeId, 'workingMemory');
   });
 
-  // Generate the return statement
-  const returnNode = nodes.find(node => node.type === 'return');
-  if (returnNode) {
-    const returnEdge = edges.find(edge => edge.target === returnNode.id);
-    if (returnEdge) {
-      console.log('Return Edge:', returnEdge)
-      console.log('MAP:', workingMemoryMap)
-      const returnVariable = workingMemoryMap.get(returnEdge.target);
-      if (returnVariable) {
-        code += `\n  return ${returnVariable};`; 
-      } else {
-        // Handle the case where the return variable is not found (error handling)
-        console.error('Return variable not found in working memory map.');
-      }
-    } else {
-      // Handle the case where the return edge is not found (error handling)
-      console.error('Return edge not found.');
-    }
-  } else {
-    // Handle the case where the return node is not found (error handling)
-    console.error('Return node not found.');
-  }
 
   // Close the function
   code += `\n};`;

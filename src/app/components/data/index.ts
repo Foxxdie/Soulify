@@ -4,12 +4,19 @@ import {
   MarkerType,
 } from "reactflow";
 
-import { SoulActions } from "../ActionNode";
-import { CognitiveStepHandles, CognitiveSteps } from "../CognitiveStepNode";
+import { SoulActions } from "../nodes/ActionNode";
+import { CognitiveStepHandles, CognitiveSteps } from "../nodes/CognitiveStepNode";
+
+export type CognitiveStepNode = {
+  label: string;
+  instructions: string;
+  cognitiveStep: CognitiveSteps;
+  choices?: string[];
+  onChange: (evt:any, data:any) => void;
+}
 
 export type MentalProcessNode = {
   id: string;
-  rootNode: Node;
   nodes: Node[];
   edges: Edge[];
 }
@@ -26,16 +33,16 @@ export const extractAllActions = (mentalProcessNode: MentalProcessNode) => {
 
 const emptyMentalProcess: MentalProcessNode = {
   id: "speaks",
-  rootNode: {
-    id: "speaks",
-    type: "mentalProcess",
-    data: { label: null },
-    position: { x: 100, y: 100 },
-    style: {
-      width: 700,
-      height: 300,
-    },
-  },
+  // rootNode: {
+  //   id: "speaks",
+  //   type: "mentalProcess",
+  //   data: { label: null },
+  //   position: { x: 100, y: 100 },
+  //   style: {
+  //     width: 700,
+  //     height: 300,
+  //   },
+  // },
   nodes: [
     {
       id: "externalDialog",

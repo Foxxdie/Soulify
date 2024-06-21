@@ -10,6 +10,7 @@ interface SoulEngineContextType {
   doc: ReturnType<typeof syncedStore<{ files: Record<string, string> }>>,
   updateFile: (filePath: string, content: string) => void;
   getFileContent: (filePath: string) => string | undefined;
+  initialSync: boolean;
 }
 
 // Create the context
@@ -23,6 +24,7 @@ export const SoulProvider: React.FC<{ local?: boolean, children: ReactNode }> = 
   const providerRef = useRef<HocuspocusProvider | null>(null);
   const docShape = { files: {} as Record<string, string> };
   const doc = syncedStore(docShape, new Y.Doc()); 
+  const [initialSync, setInitialSync] = useState(false);
 
   /**
    * Attempt to retrieve a given file from the Yjs document store
@@ -92,15 +94,18 @@ export const SoulProvider: React.FC<{ local?: boolean, children: ReactNode }> = 
           },
           onStateless: async ({ payload }) => {
             console.log('Stateless event received:', payload);
+            setInitialSync(true);
           },
         });
 
         providerRef.current = provider;
-        const response = await fetch('/api/route');
+        const response = await fetch('/api');
+        console.log('Response: ', response)
         if (response.ok) {
           const filesData = await response.json();
           getYjsDoc(doc).transact(() => {
             for (const file of filesData) {
+              console.log('uploading file: ', file.relativePath)
               doc.files[file.relativePath] = file.content;
             }
           });
@@ -126,7 +131,7 @@ export const SoulProvider: React.FC<{ local?: boolean, children: ReactNode }> = 
   }, [local]);
 
   // Provide the context values
-  const contextValue = { doc, updateFile, getFileContent };
+  const contextValue = { doc, updateFile, getFileContent, initialSync };
 
   return (
     <SoulEngineContext.Provider value={contextValue}>

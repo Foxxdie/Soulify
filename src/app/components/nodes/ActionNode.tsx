@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Handle, Position, NodeProps, NodeResizer } from 'reactflow';
 import { HandRaisedIcon, Cog6ToothIcon } from '@heroicons/react/16/solid';
-import ActionDropdown, {ActionOption} from './utility/ActionDropdown';
+import ActionDropdown, {ActionOption} from './controls/ActionDropdown';
 
 
 // Additional Node props can be accessed via the `data` prop
@@ -41,13 +41,13 @@ const CognitiveStep: React.FC<NodeProps<ActionData>> = (props) => {
   };
 
   return (
-    <div className="border-2 border-indigo-500 rounded-lg shadow-lg bg-gray-800 text-white h-full">
+    <div className="border-2 border-blue-300 rounded bg-blue-700 text-blue-200 h-full">
       <NodeResizer color="#ff0071" isVisible={selected} minWidth={200} minHeight={75} />
-      <div className="border-b-4 border-indigo-500 flex items-center mb-2 px-2 py-1 justify-between">
+      <div className="border-b-4 border-blue-300 flex items-center mb-2 px-2 py-1 justify-between">
         <svg className="h-3 w-3 fill-gray-400" viewBox="0 0 6 6" aria-hidden="true">
           <circle cx={3} cy={3} r={3} />
         </svg>
-        <h3 className="text-gray-400">
+        <h3 className="text-blue-200">
           {selectedOption.name}
         </h3>
         <div>
@@ -65,7 +65,7 @@ const CognitiveStep: React.FC<NodeProps<ActionData>> = (props) => {
             id="input"
             className="left-2 h-3 w-3 bg-blue-500 border-green-950"
           />
-          <label className="ml-4 text-xs text-gray-400">Input</label>
+          <label className="ml-4 text-xs text-blue-200">Input</label>
         </div>
       
       </div>

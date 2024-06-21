@@ -21,6 +21,7 @@ const profanity_options = [
 
 type SoulENVVars = {
   entityName: string;
+  entityDetails: string;
   verbosity: string;
   profanity: string;
 }
@@ -31,14 +32,51 @@ const Blueprint: React.FC = (props) => {
   const [details, setDetails] = useState<string>(''); // soulDetails
   const [verbosity, setVerbosity] = useState<string>('standard');
   const [profanity, setProfanity] = useState<string>('mild');
+  
   const [content, setContent] = useState<string>('');
   const [filePath, setFilePath] = useState<string>('');
   const { doc, updateFile, getFileContent } = useSoulEngine();
+  const [envVariables, setEnvVariables] = useState<Record<string, string>>({});
+
 
   // log doc with useEffect
-  useEffect(() => {
-    console.log('doc:', doc);
-  }, [doc]);
+  // useEffect(() => {
+  //   const checkForFile = setInterval(() => {
+  //     const fileContent = getFileContent('soul/default.env.ts');
+
+  //     if (fileContent) {
+  //       try {
+  //         const parsedEnv = parseEnvContent(fileContent); 
+  //         console.log('Parsed ENV:', parsedEnv)
+  //         if (parsedEnv.entityName) {
+  //           setEnvVariables(parsedEnv);
+  //           clearInterval(checkForFile); // Stop checking once the file is loaded
+  //         }
+  //       } catch (error) {
+  //         console.error('Error parsing env file:', error);
+  //       }
+  //     } 
+  //   }, 500); // Check every 500 milliseconds (adjust as needed)
+
+  //   return () => clearInterval(checkForFile); // Clean up on unmount
+  // }, [getFileContent]);
+
+  // Helper function to parse the .env.ts content (adjust logic if needed)
+  const parseEnvContent = (content: string): Record<string, string> => {
+    const envObject: Record<string, string> = {};
+    const lines = content.split('\n');
+
+    for (const line of lines) {
+      if (line.trim() && !line.startsWith('//')) { // Ignore empty lines and comments
+        const [key, value] = line.split('=').map((part) => part.trim());
+        if (key && value) {
+          envObject[key] = value.replace(/['"]/g, ''); // Remove quotes
+        }
+      }
+    }
+
+    return envObject;
+  };
 
   const generateBlueprint = () => {
     const title = `You are modeling the mind of ${name}`;
@@ -68,7 +106,23 @@ const Blueprint: React.FC = (props) => {
   const handleGet = () => {
     const file = 'soul/default.env.ts';
     const t = getFileContent(file);
-    console.log(t)
+    console.log("GOT FILE?", t);
+    if (t) {
+      const validJson = t
+        .replace("export default", "") //remove the extra code from the string
+        .slice(0, -1)
+        .replace(/(\w+)\s*:/g, '"$1":') // Add double quotes around keys
+        + "}";
+
+      console.log(validJson)
+      const parsedEnv = JSON.parse(validJson);
+      // const env = JSON.parse(t);
+      console.log(parsedEnv)
+      setName(parsedEnv.entityName);
+      setDetails(parsedEnv.entityDetails);
+      setVerbosity(parsedEnv.verbosity);
+      setProfanity(parsedEnv.profanity);
+    }
   }
 
   const handleBlueprintUpdate = () => {
@@ -81,11 +135,14 @@ const Blueprint: React.FC = (props) => {
   const handleENVUpdate = () => {
     const envVars = {
       entityName: name,
+      entityDetails: details,
       verbosity: verbosity,
       profanity: profanity,
     }
     setContent(JSON.stringify(envVars, null, 2));
     setFilePath('soul/default.env.ts');
+
+    updateFile('soul/default.env.ts', JSON.stringify(envVars, null, 2));
 
   }
 

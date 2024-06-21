@@ -5,6 +5,7 @@ import { Soul, SoulOpts, said, Events } from "@opensouls/soul";
 import { ActionEvent } from "@opensouls/engine";
 import ChatMessages from "./ChatMessages";
 import ChatFooter from "./ChatFooter";
+import { useSoulEngine } from "@/app/providers/SoulProvider";
 
 export const SOUL_DEBUG = process.env.NEXT_PUBLIC_SOUL_ENGINE_DEV === 'true';
 
@@ -22,47 +23,58 @@ interface Message {
 };
 
 function ChatWithSoul() {
+  const { doc, updateFile, getFileContent, initialSync } = useSoulEngine();
   const [messages, setMessages] = useState<Message[]>([]);
   const [soul, setSoul] = useState<Soul | null>(null);
+  const [isActive, setIsActive] = useState<boolean>(false);
 
 
   useEffect(() => {
+    console.log("doc: ", doc);
+    console.log("initialSync: ", initialSync);
+    // if (lastSync  initialSync) {
+    //   return;
+    // }
 
-    // Create a new Soul instance
-    const newSoul = new Soul(defaultSoul);
-    setSoul(newSoul);
+    if (isActive === false && initialSync === true) {
+      setIsActive(true);
+      // Create a new Soul instance
+      const newSoul = new Soul(defaultSoul);
+      setSoul(newSoul);
 
-    // Connect to Soul
-    console.log("connecting");
+      // Connect to Soul
+      console.log("connecting");
 
-    const handleSays = async ({ content }: ActionEvent) => {
-      const response = await content();
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender: "Soul", text: response },
-      ]);
-    };
+      const handleSays = async ({ content }: ActionEvent) => {
+        const response = await content();
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { sender: "Soul", text: response },
+        ]);
+      };
 
-    newSoul
-      .connect()
-      .then(() => {
-        newSoul.on("says", handleSays);
+      newSoul
+        .connect()
+        .then(() => {
+          newSoul.on("says", handleSays);
 
-        // set up other events with soul.on("actionName",....)
-      })
-      .catch((error) => {
-        console.error("Failed to connect to Soul:", error);
-      });
+          // set up other events with soul.on("actionName",....)
+        })
+        .catch((error) => {
+          console.error("Failed to connect to Soul:", error);
+        });
 
-    return () => {
-      if (newSoul) {
-        newSoul.off("says", handleSays);
-        console.log('disconnected');
-        newSoul.disconnect();
-      }
-    };
+      return () => {
+        if (newSoul) {
+          newSoul.off("says", handleSays);
+          console.log('disconnected');
+          newSoul.disconnect();
+        }
+      };
+    }
+    
 
-  }, []);
+  }, [doc]);
 
   useEffect(() => {
     if (soul && soul.connected) {
