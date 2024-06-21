@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import FileSimulator from '../utility/FileSimulator';
-import { useSoulEngine } from '@/app/providers/SoulProvider';
+import { useSoulEngine } from '@/app/providers/SoulEngineProvider';
 
 // Additional Node props can be accessed via the `data` prop
 const verbosity_options = [
@@ -34,9 +34,52 @@ const Blueprint: React.FC = (props) => {
   const [profanity, setProfanity] = useState<string>('mild');
   
   const [content, setContent] = useState<string>('');
-  const [filePath, setFilePath] = useState<string>('');
-  const { doc, updateFile, getFileContent } = useSoulEngine();
+  const [filePath, setFilePath] = useState<string>('soul/default.env.ts');
+  const { getFile, updateFile, isReady } = useSoulEngine();
   const [envVariables, setEnvVariables] = useState<Record<string, string>>({});
+
+  const parseJSObjectString = (str:string) => {
+    // Remove comments
+    const noComments = str.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+    
+    // Replace single quotes with double quotes
+    const doubleQuotes = noComments.replace(/'/g, '"');
+    
+    // Add quotes to unquoted keys
+    const quotedKeys = doubleQuotes.replace(/(\w+):/g, '"$1":');
+    
+    // Wrap the entire string in curly braces if not already present
+    const wrappedStr = quotedKeys.trim().startsWith('{') ? quotedKeys : `{${quotedKeys}}`;
+    
+    try {
+      // Parse the string as JSON
+      const parsed = JSON.parse(wrappedStr);
+      return parsed;
+    } catch (error) {
+      console.error('Failed to parse object string:', error);
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    if (isReady) {
+      const fileContent = getFile(filePath);
+
+      if (fileContent) {
+        console.log("GOT FILE", fileContent)
+        try {
+          const parsedEnv = parseJSObjectString(fileContent); 
+          console.log('Parsed ENV:', parsedEnv)
+          if (parsedEnv.entityName) {
+            setEnvVariables(parsedEnv);
+          }
+        } catch (error) {
+          console.error('Error parsing env file:', error);
+        }
+      }
+      
+    }
+  }, [isReady]);
 
 
   // log doc with useEffect
@@ -62,21 +105,6 @@ const Blueprint: React.FC = (props) => {
   // }, [getFileContent]);
 
   // Helper function to parse the .env.ts content (adjust logic if needed)
-  const parseEnvContent = (content: string): Record<string, string> => {
-    const envObject: Record<string, string> = {};
-    const lines = content.split('\n');
-
-    for (const line of lines) {
-      if (line.trim() && !line.startsWith('//')) { // Ignore empty lines and comments
-        const [key, value] = line.split('=').map((part) => part.trim());
-        if (key && value) {
-          envObject[key] = value.replace(/['"]/g, ''); // Remove quotes
-        }
-      }
-    }
-
-    return envObject;
-  };
 
   const generateBlueprint = () => {
     const title = `You are modeling the mind of ${name}`;
@@ -95,17 +123,11 @@ const Blueprint: React.FC = (props) => {
     return blueprint;
   }
 
-  const handleTest = () => {
-    console.log('TEst!')
-    // const file = 'soul/default.env.ts';
-    // const file = 'soul/Samantha.md';
-    // const t = getFileContent(file);
-    // console.log(t)
-    // initialize();
-  }
+
+
   const handleGet = () => {
     const file = 'soul/default.env.ts';
-    const t = getFileContent(file);
+    const t = getFile(file);
     console.log("GOT FILE?", t);
     if (t) {
       const validJson = t
@@ -114,15 +136,20 @@ const Blueprint: React.FC = (props) => {
         .replace(/(\w+)\s*:/g, '"$1":') // Add double quotes around keys
         + "}";
 
-      console.log(validJson)
-      const parsedEnv = JSON.parse(validJson);
+      console.log("valid?",validJson)
+      const parsedEnv = parseJSObjectString(validJson);
       // const env = JSON.parse(t);
-      console.log(parsedEnv)
+      console.log("parsed!", parsedEnv)
       setName(parsedEnv.entityName);
       setDetails(parsedEnv.entityDetails);
       setVerbosity(parsedEnv.verbosity);
       setProfanity(parsedEnv.profanity);
     }
+  }
+  const handleGetSoul = () => {
+    const file = 'soul/initialProcess.ts';
+    const t = getFile(file);
+    console.log("GOT FILE?", t);
   }
 
   const handleBlueprintUpdate = () => {
@@ -233,15 +260,15 @@ const Blueprint: React.FC = (props) => {
             onClick={() => handleENVUpdate()}>
             UPDATE ENV
           </button>
-          <button 
-            className="px-4 py-2 border bg-red-300 rounded"
-            onClick={() => handleTest()}>
-            TEST
-            </button>
+        
             <button 
             className="px-4 py-2 border bg-red-300 rounded"
             onClick={() => handleGet()}>
-            GET
+            GET ENV
+          </button>
+          <button className="px-4 py-2 border bg-red-300 rounded"
+            onClick={() => handleGetSoul()}>
+            GET SOUL
           </button>
           {/* <FileSimulator content={content} filePath='soul/Samantha.md' /> */}
         </div>

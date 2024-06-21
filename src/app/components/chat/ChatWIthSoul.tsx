@@ -5,7 +5,7 @@ import { Soul, SoulOpts, said, Events } from "@opensouls/soul";
 import { ActionEvent } from "@opensouls/engine";
 import ChatMessages from "./ChatMessages";
 import ChatFooter from "./ChatFooter";
-import { useSoulEngine } from "@/app/providers/SoulProvider";
+import { useSoulEngine } from "@/app/providers/SoulEngineProvider";
 
 export const SOUL_DEBUG = process.env.NEXT_PUBLIC_SOUL_ENGINE_DEV === 'true';
 
@@ -13,7 +13,7 @@ export const defaultSoul: SoulOpts = {
   soulId: process.env.NEXT_PUBLIC_SOUL_ENGINE_ID as string,
   blueprint: process.env.NEXT_PUBLIC_SOUL_ENGINE_BLUEPRINT as string,
   organization: process.env.NEXT_PUBLIC_SOUL_ENGINE_ORGANIZATION as string,
-  token: SOUL_DEBUG ? process.env.NEXT_PUBLIC_SOUL_ENGINE_APIKEY : undefined,
+  token: SOUL_DEBUG ? process.env.NEXT_PUBLIC_SOUL_ENGINE_API_KEY : undefined,
   debug: SOUL_DEBUG,
 }
 
@@ -23,20 +23,20 @@ interface Message {
 };
 
 function ChatWithSoul() {
-  const { doc, updateFile, getFileContent, initialSync } = useSoulEngine();
+  const { getFile, updateFile, isReady } = useSoulEngine();
   const [messages, setMessages] = useState<Message[]>([]);
   const [soul, setSoul] = useState<Soul | null>(null);
   const [isActive, setIsActive] = useState<boolean>(false);
 
 
   useEffect(() => {
-    console.log("doc: ", doc);
-    console.log("initialSync: ", initialSync);
+    // console.log("doc: ", doc);
+    // console.log("initialSync: ", initialSync);
     // if (lastSync  initialSync) {
     //   return;
     // }
 
-    if (isActive === false && initialSync === true) {
+    if (isReady && !isActive) {
       setIsActive(true);
       // Create a new Soul instance
       const newSoul = new Soul(defaultSoul);
@@ -74,7 +74,7 @@ function ChatWithSoul() {
     }
     
 
-  }, [doc]);
+  }, [isReady]);
 
   useEffect(() => {
     if (soul && soul.connected) {

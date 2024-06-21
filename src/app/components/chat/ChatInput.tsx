@@ -29,7 +29,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         onFocus={onFocus}
         onBlur={onBlur}
         placeholder="Talk..."
-        className="text-md mr-2 min-w-96 flex-grow rounded-lg px-4 py-2 border border-gray-400 bg-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="text-md mr-2 flex-grow rounded-lg px-4 py-2 border border-gray-400 bg-gray-200 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
       <button 
         onClick={handleSend}

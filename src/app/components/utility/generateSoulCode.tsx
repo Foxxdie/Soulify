@@ -7,23 +7,12 @@ import {
 import { MentalProcessNode } from '../data';
 import { CognitiveStepHandles } from '../nodes/CognitiveStepNode';
 import { get } from 'http';
-import { useSoulEngine } from '@/app/providers/SoulProvider';
+import { useSoulEngine } from '@/app/providers/SoulEngineProvider';
 import { DocumentDuplicateIcon, ArrowUpOnSquareIcon } from '@heroicons/react/16/solid';
 
 type Variables = [string, string];
 
 function createMentalProcessNode(id: string, nodes: Node[], edges: Edge[]): MentalProcessNode {
-  // const rootNode = nodes.find(node => node.id === id && node.type === 'mentalProcess');
-  // if (!rootNode) {
-  //   throw new Error(`Could not find root node with id '${id}'`);
-  // }
-
-  // Extract nodes and edges related to the mental process
-  // const relevantNodes = nodes.filter(node => node.parentId === id);
-  // const relevantEdges = edges.filter(edge => {
-  //   // Check if the edge's source is any of the relevant node IDs
-  //   return relevantNodes.some(node => edge.source === node.id); 
-  // });
   const relevantNodes = nodes;
   const relevantEdges = edges;
 
@@ -42,7 +31,7 @@ function createMentalProcessNode(id: string, nodes: Node[], edges: Edge[]): Ment
 
 function SoulCodeCopyButton({ nodes, edges }: { nodes: Node[], edges: Edge[] }) {
   const [isCopied, setIsCopied] = useState(false);
-  const { doc, updateFile, getFileContent } = useSoulEngine();
+  const { getFile, updateFile, isReady } = useSoulEngine();
 
   const handleCopyClick = () => {
     const mentalProcess = createMentalProcessNode('speaks', nodes, edges);

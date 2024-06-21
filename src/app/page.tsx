@@ -14,9 +14,9 @@ import ReactFlow, {
 import { ArrowDownIcon } from "@heroicons/react/16/solid";
 import 'reactflow/dist/style.css';
 import FlowChart from "./components/Flow2";
-import MentalProcessModal from "./components/modals/MentalProcessModal";
 import Sidebar from "./components/Sidebar";
 import { SoulProvider } from "./providers/SoulProvider";
+import { SoulEngineProvider } from "./providers/SoulEngineProvider";
 
 
 
@@ -40,14 +40,14 @@ export default function Home() {
 
   return (
     <main style={{ width: '100vw', height: '100vh' }}>
-      <SoulProvider>
+      <SoulEngineProvider local={false}>
 
         <div className="flex w-full h-full">
           <FlowChart />
           <Sidebar />
         </div>
 
-      </SoulProvider>
+      </SoulEngineProvider>
     </main>
   );
 }

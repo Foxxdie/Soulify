@@ -50,9 +50,11 @@ const FileSimulator: React.FC<FileSimulatorProps> = ({
     getYjsDoc(store).transact(() => {
       console.log(doc.get('files'))
       console.log(store.files[relativeFilePath])
-
-      store.files[relativeFilePath] = content;
-
+      // if (store.files[relativeFilePath]) {
+        store.files[relativeFilePath] = content;
+      // }
+      // const filesMap = doc.get('files'); 
+      // filesMap.set(relativeFilePath, testCode);
     });
 
     // Send the custom event
@@ -85,9 +87,8 @@ const FileSimulator: React.FC<FileSimulatorProps> = ({
         name: docName,
         token: apiKey,
         document: getYjsDoc(doc),
-        onSynced: (data) => {
+        onSynced: () => {
           console.log('Yjs document synced with server!');
-          console.log();
         },
         async onAuthenticationFailed({ reason }) {
           console.error("authentication failed", reason)
