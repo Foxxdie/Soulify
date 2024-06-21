@@ -38,22 +38,30 @@ const Blueprint: React.FC = (props) => {
   const { getFile, updateFile, isReady } = useSoulEngine();
   const [envVariables, setEnvVariables] = useState<Record<string, string>>({});
 
-  const parseJSObjectString = (str:string) => {
+  function parseJSObjectString(str:string) {
     // Remove comments
     const noComments = str.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
     
+    // Try parsing as JSON first
+    try {
+      return JSON.parse(noComments);
+    } catch (e) {
+      // If JSON parsing fails, proceed with the original method
+      console.log("Initial JSON parse failed, attempting to clean up the string.");
+    }
+  
     // Replace single quotes with double quotes
-    const doubleQuotes = noComments.replace(/'/g, '"');
+    let processedStr = noComments.replace(/'/g, '"');
     
     // Add quotes to unquoted keys
-    const quotedKeys = doubleQuotes.replace(/(\w+):/g, '"$1":');
+    processedStr = processedStr.replace(/(\w+):/g, '"$1":');
     
     // Wrap the entire string in curly braces if not already present
-    const wrappedStr = quotedKeys.trim().startsWith('{') ? quotedKeys : `{${quotedKeys}}`;
+    processedStr = processedStr.trim().startsWith('{') ? processedStr : `{${processedStr}}`;
     
     try {
-      // Parse the string as JSON
-      const parsed = JSON.parse(wrappedStr);
+      // Parse the processed string as JSON
+      const parsed = JSON.parse(processedStr);
       return parsed;
     } catch (error) {
       console.error('Failed to parse object string:', error);
@@ -249,8 +257,14 @@ const Blueprint: React.FC = (props) => {
             How much profanity you want your soul to use
           </p>
         </div>
-        <div className="col-span-full">
-          <button 
+        <div className="col-span-full flex">
+          <button className="shrink rounded border-2 bg-gray-700 text-white px-4 py-2" onClick={() => handleGet()}>
+            Load Env
+          </button>
+          <button className="grow rounded border-2 bg-gray-700 text-white px-4 py-2">
+            Update Soul
+          </button>
+          {/* <button 
             className="px-4 py-2 border bg-red-300 rounded"
             onClick={() => handleBlueprintUpdate()}>
             UPDATE SOUL
@@ -269,7 +283,7 @@ const Blueprint: React.FC = (props) => {
           <button className="px-4 py-2 border bg-red-300 rounded"
             onClick={() => handleGetSoul()}>
             GET SOUL
-          </button>
+          </button> */}
           {/* <FileSimulator content={content} filePath='soul/Samantha.md' /> */}
         </div>
       </div>

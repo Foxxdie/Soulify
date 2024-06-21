@@ -37,7 +37,10 @@ function ChatWithSoul() {
     // }
 
     if (isReady && !isActive) {
-      setIsActive(true);
+
+      // wait for 1 second
+      setTimeout(() => {
+        setIsActive(true);
       // Create a new Soul instance
       const newSoul = new Soul(defaultSoul);
       setSoul(newSoul);
@@ -71,6 +74,9 @@ function ChatWithSoul() {
           newSoul.disconnect();
         }
       };
+      }, 2000);
+
+      
     }
     
 
